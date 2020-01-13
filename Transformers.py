@@ -26,3 +26,33 @@ class DataFrameWrapper(TransformerMixin):
 
     def transform(self, x):
         return pd.DataFrame(x, columns=self.columns)
+
+
+class DeleteColumn(TransformerMixin):
+    """
+    DeleteColumn deletes specified column,s from pandas DataFrame
+    """
+
+    def __init__(self, column_names_to_delete):
+        """
+
+        param: column_names_to_delete: list of column names to delete specified as strings
+        """
+
+        assert (isinstance(column_names_to_delete, list)), "argument: column_names_to_delete must be of type list"
+        self.column_names_to_delete = column_names_to_delete
+        self.__check_string_type(column_names_to_delete)
+
+    def fit(self, x):
+        assert (isinstance(x, pd.DataFrame)), "input must be of type pandas.DataFrame"
+        self.__check_string_type(x.columns.tolist())
+
+    def transform(self, x):
+        for column in self.column_names_to_delete:
+            x.pop(column)
+        return x
+
+    @staticmethod
+    def __check_string_type(list_of_values):
+        for value in list_of_values:
+            assert (isinstance(value, str))
