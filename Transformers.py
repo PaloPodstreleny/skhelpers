@@ -1,4 +1,5 @@
 from sklearn.base import TransformerMixin
+from sklearn.preprocessing import OrdinalEncoder
 import pandas as pd
 import numpy as np
 
@@ -20,7 +21,7 @@ class DataFrameWrapper(TransformerMixin):
 
         self.columns = list_column_names
 
-    def fit(self, x, y=None):
+    def fit(self, x, y=None, **fitparams):
         assert (isinstance(x, np.ndarray)), "input must have numpy ndarray data type"
         return self
 
@@ -41,18 +42,65 @@ class DeleteColumn(TransformerMixin):
 
         assert (isinstance(column_names_to_delete, list)), "argument: column_names_to_delete must be of type list"
         self.column_names_to_delete = column_names_to_delete
-        self.__check_string_type(column_names_to_delete)
+        check_string_type(column_names_to_delete)
 
-    def fit(self, x):
+    def fit(self, x, y=None, **fitparams):
         assert (isinstance(x, pd.DataFrame)), "input must be of type pandas.DataFrame"
-        self.__check_string_type(x.columns.tolist())
+        check_string_type(x.columns.tolist())
+        return self
 
     def transform(self, x):
         for column in self.column_names_to_delete:
             x.pop(column)
         return x
 
-    @staticmethod
-    def __check_string_type(list_of_values):
-        for value in list_of_values:
-            assert (isinstance(value, str))
+
+class DeleteNullRows(TransformerMixin):
+    """
+    Delete rows from the data set where null occur in the column
+    """
+
+    def __init__(self, column_names):
+        """
+        param: column_names: list of columns where we check for null values
+        """
+
+        assert (isinstance(column_names, list)), "argument: column_names must be of type list"
+        check_string_type(column_names)
+        self.column_names = column_names
+
+    def fit(self, x, y=None, **fitparams):
+        assert (isinstance(x, pd.DataFrame)), "input must be of type pandas.DataFrame"
+        check_string_type(x.columns.tolist())
+        return self
+
+    def transform(self, x):
+        x.dropna(subset=self.column_names, inplace=True)
+        return x
+
+
+class OrdinalEncoderWrapper(TransformerMixin):
+    """
+    Transform categorical data into numerical data
+    """
+
+    def __init__(self, column_names):
+        """
+        param:column_names: list of columns that will be transformed
+        """
+        assert (isinstance(column_names, list)), "argument: column_names must be of type list"
+        check_string_type(column_names)
+        self.column_names = column_names
+
+    def fit(self, x, y=None, **kwargs):
+        self.enc = OrdinalEncoder().fit(x[self.column_names])
+        return self
+
+    def transform(self, x):
+        x[self.column_names] = self.enc.transform(x[self.column_names])
+        return x
+
+
+def check_string_type(list_of_values):
+    for value in list_of_values:
+        assert (isinstance(value, str))
