@@ -1,7 +1,7 @@
-from sklearn.base import TransformerMixin
-from sklearn.preprocessing import OrdinalEncoder
-import pandas as pd
 import numpy as np
+import pandas as pd
+from sklearn.base import TransformerMixin
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 
 
 class DataFrameWrapper(TransformerMixin):
@@ -99,6 +99,46 @@ class OrdinalEncoderWrapper(TransformerMixin):
     def transform(self, x):
         x[self.column_names] = self.enc.transform(x[self.column_names])
         return x
+
+
+class OneHotEncoderWrapper(TransformerMixin):
+    """
+    Transform categorical data into one hot encoders
+    """
+
+    def __init__(self, column_names):
+        """
+        param: column_names: list of columns that will be transformed
+        """
+
+        assert (isinstance(column_names, list)), "argument: column_names must be of type list"
+        check_string_type(column_names)
+        self.column_names = column_names
+        self.enc_list = []
+
+    def fit(self, x, y=None, **kwargs):
+        for column in self.column_names:
+            self.enc_list.append(OneHotEncoder().fit(x[[column]]))
+        return self
+
+    def transform(self, x):
+        # Transform data
+
+        for encoder, column_name in zip(self.enc_list, self.column_names):
+            data = encoder.transform(x[[column_name]]).toarray()
+
+            new_column_names = encoder.get_feature_names()
+            for i in range(len(new_column_names)):
+                x[new_column_names[i]] = data[:, i]
+
+        for column_name in self.column_names:
+            x.pop(column_name)
+        return x
+
+    @staticmethod
+    def __remove_columns(x, list_of_columns):
+        for column in list_of_columns:
+            x[column].pop()
 
 
 def check_string_type(list_of_values):
