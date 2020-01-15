@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.base import TransformerMixin
-from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder, StandardScaler
 
 
 class DataFrameWrapper(TransformerMixin):
@@ -139,6 +139,30 @@ class OneHotEncoderWrapper(TransformerMixin):
     def __remove_columns(x, list_of_columns):
         for column in list_of_columns:
             x[column].pop()
+
+
+class StandardScalerWrapper(TransformerMixin):
+
+    def __init__(self, column_names):
+        """
+        param:column_names: list of columns that will be transformed
+        """
+
+        assert (isinstance(column_names, list)), "argument: column_names must be of type list"
+        check_string_type(column_names)
+        self.column_names = column_names
+        self.scalers = []
+
+    def fit(self, x, y=None, **kwargs):
+        for column in self.column_names:
+            self.scalers.append(StandardScaler().fit(x[[column]]))
+        return self
+
+    def transform(self, x, y=None, **kwargs):
+        for scaler, column_name in zip(self.scalers, self.column_names):
+            data = scaler.transform(x[[column_name]])
+            x[column_name] = data
+        return x
 
 
 def check_string_type(list_of_values):
