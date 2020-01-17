@@ -165,6 +165,29 @@ class StandardScalerWrapper(TransformerMixin):
         return x
 
 
+class StringTransformer(TransformerMixin):
+
+    def __init__(self, column_names, search_categories):
+        """
+        param:column_names: list of columns that will be transformed from string to categorical
+        """
+        assert (isinstance(column_names, list)), "argument: column_names must be of type list"
+        assert (isinstance(search_categories, list)), "argument: search_categories must be of type list"
+        check_string_type(column_names)
+        check_string_type(search_categories)
+        self.column_names = column_names
+        self.search_categories = search_categories
+
+    def fit(self, x, y=None, **kwargs):
+        return self
+
+    def transform(self, x, y=None, **kwargs):
+        for column in self.column_names:
+            for search_term in self.search_categories:
+                x[column + "_" + search_term] = x[column].str.contains(search_term).astype(np.int8)
+        return x
+
+
 def check_string_type(list_of_values):
     for value in list_of_values:
         assert (isinstance(value, str))
